@@ -1,6 +1,5 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { Router } from 'express';
-import { validationResult } from 'express-validator';
 import supabase from '../config/database';
 import { verifyToken, requireStudent } from '../middleware/auth';
 import { verifyRecord, getRecord, getStudentRecords } from '../config/blockchain';
@@ -11,7 +10,7 @@ import { AuthRequest } from '../types';
 const router: Router = express.Router();
 
 // Get student dashboard data
-router.get('/dashboard', verifyToken, requireStudent, async (req: AuthRequest, res: Response) => {
+router.get('/dashboard', verifyToken, requireStudent, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const student = req.student || req.user;
 
@@ -53,7 +52,7 @@ router.get('/dashboard', verifyToken, requireStudent, async (req: AuthRequest, r
       })
     );
 
-    res.json({
+    return res.json({
       student: {
         id: student.id || student.studentId,
         fullName: student.full_name,
@@ -66,12 +65,12 @@ router.get('/dashboard', verifyToken, requireStudent, async (req: AuthRequest, r
     });
   } catch (error: any) {
     logger.error('Dashboard error:', error);
-    res.status(500).json({ error: 'Failed to load dashboard' });
+    return res.status(500).json({ error: 'Failed to load dashboard' });
   }
 });
 
 // Get student records
-router.get('/records', verifyToken, requireStudent, async (req: AuthRequest, res: Response) => {
+router.get('/records', verifyToken, requireStudent, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const student = req.student || req.user;
     const { page = '1', limit = '20', semester, session } = req.query;
@@ -102,7 +101,7 @@ router.get('/records', verifyToken, requireStudent, async (req: AuthRequest, res
       return res.status(500).json({ error: 'Failed to fetch records' });
     }
 
-    res.json({
+    return res.json({
       results: results || [],
       pagination: {
         page: parseInt(page as string),
@@ -112,12 +111,12 @@ router.get('/records', verifyToken, requireStudent, async (req: AuthRequest, res
     });
   } catch (error: any) {
     logger.error('Get records error:', error);
-    res.status(500).json({ error: 'Failed to fetch records' });
+    return res.status(500).json({ error: 'Failed to fetch records' });
   }
 });
 
 // Get specific record
-router.get('/records/:recordId', verifyToken, requireStudent, async (req: AuthRequest, res: Response) => {
+router.get('/records/:recordId', verifyToken, requireStudent, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const { recordId } = req.params;
     const student = req.student || req.user;
@@ -158,19 +157,19 @@ router.get('/records/:recordId', verifyToken, requireStudent, async (req: AuthRe
       logger.error('Blockchain verification error:', error);
     }
 
-    res.json({
+    return res.json({
       ...result,
       blockchainVerified,
       blockchainRecord,
     });
   } catch (error: any) {
     logger.error('Get record error:', error);
-    res.status(500).json({ error: 'Failed to fetch record' });
+    return res.status(500).json({ error: 'Failed to fetch record' });
   }
 });
 
 // Get blockchain records for student
-router.get('/blockchain/records', verifyToken, requireStudent, async (req: AuthRequest, res: Response) => {
+router.get('/blockchain/records', verifyToken, requireStudent, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const student = req.student || req.user;
     const walletAddress = student?.walletAddress || student?.wallet_address;
@@ -194,15 +193,15 @@ router.get('/blockchain/records', verifyToken, requireStudent, async (req: AuthR
     // Cache for 5 minutes
     await redis.setEx(cacheKey, 300, JSON.stringify(records));
 
-    res.json({ records });
+    return res.json({ records });
   } catch (error: any) {
     logger.error('Get blockchain records error:', error);
-    res.status(500).json({ error: 'Failed to fetch blockchain records' });
+    return res.status(500).json({ error: 'Failed to fetch blockchain records' });
   }
 });
 
 // Verify record
-router.post('/records/:recordId/verify', verifyToken, requireStudent, async (req: AuthRequest, res: Response) => {
+router.post('/records/:recordId/verify', verifyToken, requireStudent, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const { recordId } = req.params;
     const student = req.student || req.user;
@@ -240,7 +239,7 @@ router.post('/records/:recordId/verify', verifyToken, requireStudent, async (req
       created_at: new Date().toISOString(),
     });
 
-    res.json({
+    return res.json({
       verified,
       recordId: result.id,
       ipfsHash: result.ipfs_hash,
@@ -248,12 +247,12 @@ router.post('/records/:recordId/verify', verifyToken, requireStudent, async (req
     });
   } catch (error: any) {
     logger.error('Verify record error:', error);
-    res.status(500).json({ error: 'Verification failed' });
+    return res.status(500).json({ error: 'Verification failed' });
   }
 });
 
 // Get student profile
-router.get('/profile', verifyToken, requireStudent, async (req: AuthRequest, res: Response) => {
+router.get('/profile', verifyToken, requireStudent, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const student = req.student || req.user;
 
@@ -274,10 +273,10 @@ router.get('/profile', verifyToken, requireStudent, async (req: AuthRequest, res
     // Remove sensitive data
     const { password_hash, ...safeProfile } = profile as any;
 
-    res.json(safeProfile);
+    return res.json(safeProfile);
   } catch (error: any) {
     logger.error('Get profile error:', error);
-    res.status(500).json({ error: 'Failed to fetch profile' });
+    return res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
 

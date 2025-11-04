@@ -11,7 +11,7 @@ const router: Router = express.Router();
 router.post('/verify', [
   body('studentId').notEmpty().withMessage('Student ID required'),
   body('recordHash').notEmpty().withMessage('Record hash required'),
-], async (req: Request, res: Response) => {
+], async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -74,7 +74,7 @@ router.post('/verify', [
       created_at: new Date().toISOString(),
     });
 
-    res.json({
+    return res.json({
       verified: blockchainVerified,
       student: {
         id: student.id,
@@ -99,14 +99,14 @@ router.post('/verify', [
     });
   } catch (error: any) {
     logger.error('Verification error:', error);
-    res.status(500).json({ error: 'Verification failed' });
+    return res.status(500).json({ error: 'Verification failed' });
   }
 });
 
 // Quick hash verification (check if hash exists on blockchain)
 router.post('/verify-hash', [
   body('recordHash').notEmpty().withMessage('Record hash required'),
-], async (req: Request, res: Response) => {
+], async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -128,19 +128,19 @@ router.post('/verify-hash', [
       created_at: new Date().toISOString(),
     });
 
-    res.json({
+    return res.json({
       exists,
       recordHash,
       verificationTimestamp: new Date().toISOString(),
     });
   } catch (error: any) {
     logger.error('Hash verification error:', error);
-    res.status(500).json({ error: 'Verification failed' });
+    return res.status(500).json({ error: 'Verification failed' });
   }
 });
 
 // Get verification certificate
-router.get('/certificate/:studentId/:recordHash', async (req: Request, res: Response) => {
+router.get('/certificate/:studentId/:recordHash', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { studentId, recordHash } = req.params;
 
@@ -215,10 +215,10 @@ router.get('/certificate/:studentId/:recordHash', async (req: Request, res: Resp
       certificateId: `TAMPER-PROOF-${studentId}-${recordHash.substring(0, 8)}`,
     };
 
-    res.json(certificate);
+    return res.json(certificate);
   } catch (error: any) {
     logger.error('Certificate generation error:', error);
-    res.status(500).json({ error: 'Failed to generate certificate' });
+    return res.status(500).json({ error: 'Failed to generate certificate' });
   }
 });
 

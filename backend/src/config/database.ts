@@ -16,16 +16,17 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
 });
 
 // Test connection
-supabase
-  .from('students')
-  .select('count')
-  .limit(1)
-  .then(() => {
+(async () => {
+  try {
+    await supabase
+      .from('students')
+      .select('count')
+      .limit(1);
     logger.info('Supabase connection established');
-  })
-  .catch((err: Error) => {
+  } catch (err) {
     logger.error('Supabase connection error:', err);
-  });
+  }
+})();
 
 export default supabase;
 

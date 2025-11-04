@@ -11,14 +11,16 @@ export const initIPFS = (): IPFSHTTPClient => {
   }
 
   const ipfsApiUrl = process.env.IPFS_API_URL || 'https://ipfs.infura.io:5001/api/v0';
-  const ipfsGateway = process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/';
 
   try {
+    const headers: Record<string, string> = {};
+    if (process.env.IPFS_AUTH) {
+      headers.authorization = `Basic ${process.env.IPFS_AUTH}`;
+    }
+    
     ipfsClient = create({
       url: ipfsApiUrl,
-      headers: {
-        authorization: process.env.IPFS_AUTH ? `Basic ${process.env.IPFS_AUTH}` : undefined,
-      },
+      headers,
     }) as IPFSHTTPClient;
     logger.info('IPFS client initialized');
   } catch (error) {

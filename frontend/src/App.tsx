@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { createConfig, WagmiProvider } from 'wagmi';
 import { createAppKit } from '@reown/appkit';
@@ -30,7 +30,7 @@ const metadata = {
 const chains = [mainnet, polygon] as const;
 
 const wagmiAdapter = new WagmiAdapter({
-  chains,
+  networks: [...chains],
   projectId,
 });
 
@@ -40,11 +40,11 @@ const wagmiConfig = createConfig({
     [mainnet.id]: http(),
     [polygon.id]: http(),
   },
-  ...wagmiAdapter.wagmiAdapter,
 });
 
 createAppKit({
   adapters: [wagmiAdapter],
+  networks: [...chains],
   projectId,
   metadata,
   features: {

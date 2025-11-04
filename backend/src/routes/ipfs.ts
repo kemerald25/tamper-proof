@@ -11,7 +11,7 @@ const router: Router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Upload file to IPFS
-router.post('/upload', verifyToken, requireAdmin, upload.single('file'), async (req: AuthRequest, res: Response) => {
+router.post('/upload', verifyToken, requireAdmin, upload.single('file'), async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'File required' });
@@ -20,7 +20,7 @@ router.post('/upload', verifyToken, requireAdmin, upload.single('file'), async (
     const filename = req.file.originalname || `file-${Date.now()}`;
     const ipfsHash = await uploadToIPFS(req.file.buffer, filename);
 
-    res.json({
+    return res.json({
       ipfsHash,
       filename,
       size: req.file.size,
@@ -28,7 +28,7 @@ router.post('/upload', verifyToken, requireAdmin, upload.single('file'), async (
     });
   } catch (error: any) {
     logger.error('IPFS upload error:', error);
-    res.status(500).json({ error: 'Failed to upload file to IPFS' });
+    return res.status(500).json({ error: 'Failed to upload file to IPFS' });
   }
 });
 

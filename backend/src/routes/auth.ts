@@ -1,9 +1,8 @@
 import express, { Request, Response } from 'express';
 import { Router } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { body, validationResult } from 'express-validator';
-import { ethers } from 'ethers';
 import supabase from '../config/database';
 import { verifyWalletSignature } from '../middleware/auth';
 import logger from '../utils/logger';
@@ -13,9 +12,12 @@ const router: Router = express.Router();
 
 // Generate JWT token
 const generateToken = (payload: object): string => {
-  return jwt.sign(payload, process.env.JWT_SECRET || '', {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  });
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  return jwt.sign(payload, secret, { expiresIn } as SignOptions);
 };
 
 // Student wallet authentication
@@ -23,7 +25,7 @@ router.post('/wallet/login', [
   body('address').isEthereumAddress().withMessage('Invalid wallet address'),
   body('signature').notEmpty().withMessage('Signature required'),
   body('message').notEmpty().withMessage('Message required'),
-], verifyWalletSignature, async (req: AuthRequest, res: Response) => {
+], verifyWalletSignature, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -50,7 +52,7 @@ router.post('/wallet/login', [
       type: 'student',
     });
 
-    res.json({
+    return res.json({
       token,
       student: {
         id: student.id,
@@ -61,7 +63,7 @@ router.post('/wallet/login', [
     });
   } catch (error: any) {
     logger.error('Wallet login error:', error);
-    res.status(500).json({ error: 'Authentication failed' });
+    return res.status(500).json({ error: 'Authentication failed' });
   }
 });
 
@@ -69,7 +71,7 @@ router.post('/wallet/login', [
 router.post('/admin/login', [
   body('username').notEmpty().withMessage('Username required'),
   body('password').notEmpty().withMessage('Password required'),
-], async (req: Request, res: Response) => {
+], async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -111,7 +113,7 @@ router.post('/admin/login', [
       type: 'admin',
     });
 
-    res.json({
+    return res.json({
       token,
       admin: {
         id: admin.id,
@@ -122,7 +124,7 @@ router.post('/admin/login', [
     });
   } catch (error: any) {
     logger.error('Admin login error:', error);
-    res.status(500).json({ error: 'Authentication failed' });
+    return res.status(500).json({ error: 'Authentication failed' });
   }
 });
 
@@ -132,7 +134,7 @@ router.post('/admin/register', [
   body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('fullName').notEmpty().withMessage('Full name required'),
   body('role').isIn(['faculty', 'department_head', 'registry_staff']).withMessage('Invalid role'),
-], async (req: Request, res: Response) => {
+], async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -186,7 +188,7 @@ router.post('/admin/register', [
       type: 'admin',
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       token,
       admin: {
         id: admin.id,
@@ -197,12 +199,12 @@ router.post('/admin/register', [
     });
   } catch (error: any) {
     logger.error('Admin registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    return res.status(500).json({ error: 'Registration failed' });
   }
 });
 
 // Refresh token
-router.post('/refresh', async (req: Request, res: Response) => {
+router.post('/refresh', async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const { token } = req.body;
 
@@ -217,17 +219,17 @@ router.post('/refresh', async (req: Request, res: Response) => {
       exp: undefined,
     });
 
-    res.json({ token: newToken });
+    return res.json({ token: newToken });
   } catch (error: any) {
     logger.error('Token refresh error:', error);
-    res.status(401).json({ error: 'Invalid token' });
+    return res.status(401).json({ error: 'Invalid token' });
   }
 });
 
 // Generate wallet authentication message
 router.post('/wallet/message', [
   body('address').isEthereumAddress().withMessage('Invalid wallet address'),
-], async (req: Request, res: Response) => {
+], async (req: Request, res: Response): Promise<Response | void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -239,10 +241,10 @@ router.post('/wallet/message', [
     // Generate unique message for signing
     const message = `Please sign this message to authenticate with Tamper-Proof Academic Records System.\n\nWallet: ${address}\nTimestamp: ${Date.now()}`;
 
-    res.json({ message });
+    return res.json({ message });
   } catch (error: any) {
     logger.error('Message generation error:', error);
-    res.status(500).json({ error: 'Failed to generate message' });
+    return res.status(500).json({ error: 'Failed to generate message' });
   }
 });
 

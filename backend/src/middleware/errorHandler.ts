@@ -1,12 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import logger from '../utils/logger';
 
-interface ErrorWithStatus extends Error {
+interface ErrorWithStatus {
+  message: string;
+  stack?: string;
   status?: number;
   name?: string;
 }
 
-const errorHandler = (err: ErrorWithStatus, req: Request, res: Response, next: NextFunction): Response => {
+const errorHandler = (err: ErrorWithStatus, req: Request, res: Response, _next: NextFunction): Response => {
   logger.error('Error:', {
     error: err.message,
     stack: err.stack,

@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title AcademicRecords
@@ -240,13 +240,13 @@ contract AcademicRecords is Ownable, Pausable, ReentrancyGuard {
         string memory _ipfsHash
     )
         external
-        view
         validAddress(_studentAddress)
         validHash(_ipfsHash)
         returns (bool)
     {
+        bool exists = records[_studentAddress][_ipfsHash].exists;
         emit VerificationRequested(_studentAddress, _ipfsHash, msg.sender);
-        return records[_studentAddress][_ipfsHash].exists;
+        return exists;
     }
 
     /**

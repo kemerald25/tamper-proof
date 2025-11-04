@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Response } from 'express';
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
 import multer from 'multer';
@@ -9,7 +9,6 @@ import supabase from '../config/database';
 import { verifyToken, requireAdmin, requireRole } from '../middleware/auth';
 import { uploadToIPFS } from '../config/ipfs';
 import { submitRecord, batchSubmitRecords } from '../config/blockchain';
-import { getRedisClient } from '../config/redis';
 import logger from '../utils/logger';
 import { AuthRequest } from '../types';
 import { Server as SocketIOServer } from 'socket.io';
@@ -19,7 +18,7 @@ const router: Router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Get admin dashboard
-router.get('/dashboard', verifyToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/dashboard', verifyToken, requireAdmin, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const admin = req.admin;
 
@@ -68,7 +67,7 @@ router.get('/dashboard', verifyToken, requireAdmin, async (req: AuthRequest, res
 });
 
 // Search students
-router.get('/students/search', verifyToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get('/students/search', verifyToken, requireAdmin, async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const { query, department, level } = req.query;
 
@@ -114,7 +113,7 @@ router.post('/results/upload', [
   body('creditUnits').isInt({ min: 1 }).withMessage('Credit units required'),
   body('semester').notEmpty().withMessage('Semester required'),
   body('academicSession').notEmpty().withMessage('Academic session required'),
-], async (req: AuthRequest, res: Response) => {
+], async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -253,7 +252,7 @@ router.post('/results/batch-upload', [
   requireAdmin,
   requireRole('faculty', 'department_head', 'registry_staff'),
   upload.single('csvFile'),
-], async (req: AuthRequest, res: Response) => {
+], async (req: AuthRequest, res: Response): Promise<Response | void> => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'CSV file required' });
@@ -435,14 +434,14 @@ router.get('/transactions/:txHash', verifyToken, requireAdmin, async (req: AuthR
       return res.status(500).json({ error: 'Failed to fetch transaction' });
     }
 
-    res.json({
+    return res.json({
       txHash,
       results: results || [],
       status: results && results.length > 0 ? results[0].blockchain_confirmed ? 'confirmed' : 'pending' : 'not_found',
     });
   } catch (error: any) {
     logger.error('Get transaction error:', error);
-    res.status(500).json({ error: 'Failed to fetch transaction' });
+    return res.status(500).json({ error: 'Failed to fetch transaction' });
   }
 });
 
@@ -462,10 +461,10 @@ router.get('/audit-trail', verifyToken, requireAdmin, requireRole('department_he
       return res.status(500).json({ error: 'Failed to fetch audit trail' });
     }
 
-    res.json({ auditLogs: auditLogs || [] });
+    return res.json({ auditLogs: auditLogs || [] });
   } catch (error: any) {
     logger.error('Get audit trail error:', error);
-    res.status(500).json({ error: 'Failed to fetch audit trail' });
+    return res.status(500).json({ error: 'Failed to fetch audit trail' });
   }
 });
 
