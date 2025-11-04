@@ -1,0 +1,30 @@
+{
+  "name": "tamper-proof-academic-records",
+  "version": "1.0.0",
+  "description": "Tamper-Proof Academic Records System for University of Benin",
+  "private": true,
+  "scripts": {
+    "setup:database": "ts-node scripts/setup-database.ts",
+    "create:admin": "ts-node scripts/create-admin.ts",
+    "verify:contract": "ts-node scripts/verify-contract.ts",
+    "check:env": "ts-node scripts/check-env.ts",
+    "install:all": "ts-node scripts/install-all.ts",
+    "build:all": "ts-node scripts/build-all.ts"
+  },
+  "keywords": [
+    "blockchain",
+    "academic",
+    "records",
+    "polygon",
+    "ipfs",
+    "supabase"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
+
